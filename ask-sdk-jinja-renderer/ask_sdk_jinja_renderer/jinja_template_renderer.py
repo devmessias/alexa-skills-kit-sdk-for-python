@@ -15,13 +15,14 @@
 # specific language governing permissions and limitations under the
 # License.
 #
+
 import typing
 import six
 
 from ask_sdk_runtime.view_resolvers import AbstractTemplateRenderer
 from ask_sdk_core.serialize import DefaultSerializer
 from ask_sdk_core.exceptions import TemplateRendererException
-from jinja2 import Template
+from jinja2 import Template, FileSystemLoader, Environment, select_autoescape
 
 if typing.TYPE_CHECKING:
     from typing import TypeVar, Dict, Any, Union
@@ -94,8 +95,21 @@ class JinjaTemplateRenderer(AbstractTemplateRenderer):
         """
         try:
             encoding = template_content.encoding
-            template = Template(template_content.content_data.decode(encoding))
+            # my
+            templateLoader = FileSystemLoader(searchpath="./", encoding='utf-8')
+            templateEnv = Environment(
+                loader=templateLoader,
+                #autoescape=select_autoescape(['html', 'xml'])
+            )
+            # my
+            #template = Template(template_content.content_data.decode(encoding))
+            
+            template = templateEnv.from_string(template_content.content_data.decode(encoding))
+            
             rendered_template = template.render(data_map)
+            rendered_template = rendered_template.replace("\n", " ")
+            
+
             if six.PY2:
                 rendered_template = rendered_template.encode("utf-8")
             return self.serializer.deserialize(rendered_template, self.output_type)
